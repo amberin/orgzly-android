@@ -183,7 +183,7 @@ public class BookNamesake {
                 return;
             }
 
-            if (! book.getSyncedTo().getUri().equals(latestLinkedRook.getUri())) {
+            if (! Uri.decode(book.getSyncedTo().toString()).equals(latestLinkedRook.toString())) {
                 status = BookSyncStatus.CONFLICT_LAST_SYNCED_ROOK_AND_LATEST_ROOK_ARE_DIFFERENT;
                 return;
             }
