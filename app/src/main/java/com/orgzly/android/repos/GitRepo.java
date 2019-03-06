@@ -14,6 +14,8 @@ import com.orgzly.android.prefs.RepoPreferences;
 
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.GitCommand;
+import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -40,14 +42,21 @@ import java.util.List;
 public class GitRepo implements SyncRepo, TwoWaySyncRepo {
     public final static String SCHEME = "git";
 
-    public static GitTransportSetter getTransportSetter(GitPreferences preferences) {
+    public static GitTransportSetter getTransportSetter(GitPreferences preferences) { // Denna verkar funka både vid activity och sync.
         return new GitSSHKeyTransportSetter(Uri.parse(preferences.sshKeyPathString()).getPath());
     }
 
     public static GitRepo buildFromUri(Context context, Uri uri)
             throws IOException, URISyntaxException {
         GitPreferencesFromRepoPrefs prefs = new GitPreferencesFromRepoPrefs(
-                RepoPreferences.fromUri(context, uri));
+                RepoPreferences.fromUri(context, uri)); // Här verkar man inte få tillbaka så mycket till RepoPreferences...
+        return build(prefs, false);
+    }
+
+    public static GitRepo buildFromRepoId(Context context, Long rid)
+            throws IOException {
+        GitPreferencesFromRepoPrefs prefs = new GitPreferencesFromRepoPrefs(
+                RepoPreferences.fromRepoId(context, rid)); // Här verkar man inte få tillbaka så mycket till RepoPreferences...
         return build(prefs, false);
     }
 
@@ -56,7 +65,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
 
         StoredConfig config = git.getRepository().getConfig();
         config.setString("remote", prefs.remoteName(), "url", prefs.remoteUri().toString());
-        config.save();
+        config.save(); // config verkar sättas ganska bra vid sync
 
         return new GitRepo(git, prefs);
     }
@@ -74,7 +83,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
     }
 
     public static Git ensureRepositoryExists(
-            Uri repoUri, File directoryFile, GitTransportSetter transportSetter,
+            Uri repoUri, File directoryFile, GitTransportSetter transportSetter, // Allt verkar sättas korrekt här vid sync, utom repoUri!
             boolean clone, ProgressMonitor pm)
             throws IOException {
         FileRepositoryBuilder frb = new FileRepositoryBuilder();
@@ -124,7 +133,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
         return false;
     }
 
-    public VersionedRook storeBook(File file, String fileName) throws IOException {
+    public VersionedRook storeBook(File file, String fileName) throws IOException { // Ah, jag hade helt missförstått vad denna metod används till. Den anropas bara när man skapar en ny notebook.
         // FIXME: Removed current_versioned_rooks table, just get the list from remote
 //        VersionedRook current = CurrentRooksClient.get(
 //                // TODO: get rid of "/" prefix needed here
@@ -173,8 +182,9 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
     }
 
     private VersionedRook currentVersionedRook(Uri uri) throws IOException {
-        RevCommit newCommit = synchronizer.currentHead();
-        return new VersionedRook(getUri(), uri, newCommit.name(), newCommit.getCommitTime()*1000);
+        RevCommit newCommit = synchronizer.currentHead(); // TODO: Don't use current HEAD as a starting point; start by finding out the current revision of "uri".
+        long mtime = (long)newCommit.getCommitTime()*1000;
+        return new VersionedRook(getUri(), uri, newCommit.name(), mtime);
     }
 
     private IgnoreNode getIgnores() throws IOException {
@@ -272,9 +282,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
             syncBackNeeded = true;
         }
         Log.i("Git", String.format("Sync back needed was %s", syncBackNeeded));
-        if (syncBackNeeded) {
-            writeBack = synchronizer.repoDirectoryFile(fileName);
-        }
+        writeBack = synchronizer.repoDirectoryFile(fileName);
         return new TwoWaySyncResult(
                 currentVersionedRook(Uri.EMPTY.buildUpon().appendPath(fileName).build()),
                 writeBack);

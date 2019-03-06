@@ -14,6 +14,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.EditText
+import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.Observer
 import com.google.android.material.textfield.TextInputLayout
 import com.orgzly.R
 import com.orgzly.android.App
@@ -21,6 +23,7 @@ import com.orgzly.android.git.GitPreferences
 import com.orgzly.android.prefs.AppPreferences
 import com.orgzly.android.prefs.RepoPreferences
 import com.orgzly.android.repos.GitRepo
+import com.orgzly.android.repos.RepoFactory
 import com.orgzly.android.ui.CommonActivity
 import com.orgzly.android.usecase.RepoCreate
 import com.orgzly.android.usecase.RepoUpdate
@@ -30,11 +33,18 @@ import com.orgzly.android.util.MiscUtils
 import kotlinx.android.synthetic.main.activity_repo_git.*
 import org.eclipse.jgit.lib.ProgressMonitor
 import java.io.IOException
+import javax.inject.Inject
 
 class GitRepoActivity : CommonActivity(), GitPreferences {
-    private lateinit var fields: Array<Field>
+
+    @Inject
+    lateinit var repoFactory: RepoFactory
 
     private var repoId: Long = 0
+
+    private lateinit var viewModel: RepoViewModel
+
+    private lateinit var fields: Array<Field>
 
     data class Field(var editText: EditText, var layout: TextInputLayout, var preference: Int)
 
@@ -84,19 +94,37 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
 
         repoId = intent.getLongExtra(ARG_REPO_ID, 0)
 
+        val factory = RepoViewModelFactory.getInstance(dataRepository, repoId)
+
+        viewModel = ViewModelProviders.of(this, factory).get(RepoViewModel::class.java)
+
         /* Set directory value for existing repository being edited. */
         if (repoId != 0L) {
-            dataRepository.getRepo(repoId)?.let { repo ->
-                activity_repo_git_url.setText(repo.url)
-                setFromPreferences()
-            }
+            viewModel.repo.observe(this, Observer {
+                activity_repo_git_url.setText(it.url)
+                setFromPreferences() // det är det här som verkar göra att activity lyckas hämta?
+           })
         }
+
+        viewModel.finishEvent.observeSingle(this, Observer {
+            finish()
+        })
+
+        viewModel.alreadyExistsEvent.observeSingle(this, Observer {
+            showSnackbar(R.string.repository_url_already_exists)
+        })
+
+        viewModel.errorEvent.observeSingle(this, Observer { error ->
+            if (error != null) {
+                showSnackbar((error.cause ?: error).localizedMessage)
+            }
+        })
     }
 
     private fun setFromPreferences() {
-        val prefs = RepoPreferences(this, repoId)
+        val prefs = RepoPreferences(this, repoId) // funkar
         for (field in fields) {
-            setTextFromPrefKey(prefs, field.editText, field.preference)
+            setTextFromPrefKey(prefs, field.editText, field.preference) // funkar
         }
     }
 
@@ -121,7 +149,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
         return when (item.itemId) {
             R.id.done -> {
                 saveAndFinish()
-                return true
+                true
             }
 
             R.id.close, android.R.id.home -> {
@@ -158,7 +186,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
         val editor: SharedPreferences.Editor = RepoPreferences(this, id).repoPreferences.edit()
 
         for (field in fields) {
-            val settingName = getSettingName(field.preference)
+            val settingName = getSettingName(field.preference) // field.preference = Int (0-5)
             val value = field.editText.text.toString()
             if (value.isNotEmpty()) {
                 editor.putString(settingName, value)
@@ -180,7 +208,10 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
         }
 
         App.EXECUTORS.diskIO().execute {
-            UseCaseRunner.run(action)
+            val createdRepoId = UseCaseRunner.run(action).userData
+            if (createdRepoId is Long) {
+                repoId = createdRepoId
+            }
 
             App.EXECUTORS.mainThread().execute {
                 saveToPreferences(repoId)
@@ -214,7 +245,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
     }
 
     private fun getSettingName(setting: Int): String {
-        return resources.getString(setting)
+        return resources.getString(setting) // Funkar för activity, men tveksamt om den anropas vid sync?
     }
 
     private fun withDefault(v: String?, selector: Int): String {
@@ -238,7 +269,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
     override fun repositoryFilepath(): String {
         val v = activity_repo_git_directory.text.toString()
         return if (v.isNotEmpty()) {
-            v
+            v // något sånt här behövs vid sync!
         } else {
             AppPreferences.repositoryStoragePathForUri(this, remoteUri())
         }
@@ -253,7 +284,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
         return withDefault(activity_repo_git_branch.text.toString(), R.string.pref_key_git_branch_name)
     }
 
-    override fun remoteUri(): Uri {
+    override fun remoteUri(): Uri { // En override motsvarande denna behövs även för GitPreferencesFromRepoPrefs!
         val remoteUriString = activity_repo_git_url.text.toString()
         return Uri.parse(remoteUriString)
     }
@@ -328,7 +359,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
             progressDialog.dismiss()
         }
 
-        override fun onPostExecute(e: IOException) {
+        override fun onPostExecute(e: IOException?) {
             progressDialog.dismiss()
             fragment.repoCheckComplete(e)
         }

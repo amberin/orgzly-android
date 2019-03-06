@@ -688,7 +688,7 @@ public class AppPreferences {
                 context, R.string.pref_key_git_default_repository_directory, path.toString());
     }
 
-    public static String repositoryStoragePathForUri(Context context, Uri repoUri)  {
+    public static String repositoryStoragePathForUri(Context context, Uri repoUri)  { // Tror jag kan ignorera denna när det gäller Git-repon, den används bara för att försöka få fram ett default-värde.
         String directoryFilename = repoUri.toString();
         try {
             directoryFilename = new URIish(directoryFilename).getPath();

@@ -16,6 +16,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
@@ -57,7 +58,7 @@ public class GitFileSynchronizer {
     }
 
     private void fetch() throws GitAPIException {
-        transportSetter().setTransport(git.fetch().setRemote(preferences.remoteName())).call();
+        transportSetter().setTransport(git.fetch().setRemote(preferences.remoteName())).call(); // Jag tror att "preferences" behöver innehålla en vettig remoteName()-metod.
     }
 
     public void checkoutSelected() throws GitAPIException {

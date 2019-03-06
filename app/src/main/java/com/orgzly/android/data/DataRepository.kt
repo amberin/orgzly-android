@@ -172,7 +172,8 @@ class DataRepository @Inject constructor(
 
     @Throws(IOException::class)
     fun getRepo(repoUrl: Uri): SyncRepo {
-        return repoFactory.getFromUri(context, repoUrl)
+        val repoId = getRepoId(repoUrl.toString())
+        return repoFactory.getFromUri(context, repoUrl, repoId)
                 ?: throw IOException("Unsupported repository URL \"$repoUrl\"")
     }
 
@@ -327,7 +328,7 @@ class DataRepository @Inject constructor(
 
     private fun deleteBook(book: BookView, deleteLinked: Boolean) {
         if (deleteLinked) {
-            val repo = repoFactory.getFromUri(context, book.syncedTo?.repoUri)
+            val repo = repoFactory.getFromUri(context, book.syncedTo?.repoUri, null)
             repo?.delete(book.syncedTo?.uri)
         }
 
@@ -380,7 +381,7 @@ class DataRepository @Inject constructor(
         /* Prefer link. */
         if (bookView.syncedTo != null) {
             val vrook = bookView.syncedTo
-            val repo = repoFactory.getFromUri(context, vrook.repoUri)
+            val repo = repoFactory.getFromUri(context, vrook.repoUri, null)
 
             val movedVrook = repo.renameBook(vrook.uri, name)
 
@@ -1261,7 +1262,7 @@ class DataRepository @Inject constructor(
     fun loadBookFromRepo(repoUri: Uri, fileName: String): BookView? {
         val book: BookView?
 
-        val repo = repoFactory.getFromUri(context, repoUri)
+        val repo = repoFactory.getFromUri(context, repoUri, null)
                 ?: throw IOException("Unsupported repository URL \"$repoUri\"")
 
         val tmpFile = getTempBookFile()
@@ -1681,8 +1682,8 @@ class DataRepository @Inject constructor(
 
         val result = java.util.HashMap<String, SyncRepo>()
 
-        for ((_, url) in repos) {
-            val repo = repoFactory.getFromUri(context, url)
+        for ((repoId, url) in repos) {
+            val repo = repoFactory.getFromUri(context, url, repoId)
 
             if (repo != null) {
                 result[url] = repo
@@ -1705,6 +1706,14 @@ class DataRepository @Inject constructor(
     fun getRepo(id: Long): Repo? {
         return db.repo().get(id)
     }
+
+    private fun getRepoId(url: String): Long? {
+        return db.repo().getIdFromUrl(url)
+    }
+
+//    fun getRepoUrl(id: Long): String? {
+//        return db.repo().getUrlStringFromId(id)
+//    }
 
     fun createRepo(url: String): Long {
         if (getRepo(url) != null) {

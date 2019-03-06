@@ -32,7 +32,7 @@ public class GitPreferencesFromRepoPrefs implements GitPreferences {
     }
 
     @Override
-    public String repositoryFilepath() {
+    public String repositoryFilepath() { // Tvivlar starkt på att denna funkar... repoPreferences verkar ju i det här läget inte innehålla något mer än värdet på repoId.
         return repoPreferences.getStringValueWithGlobalDefault(
                 R.string.pref_key_git_repository_filepath,
                 AppPreferences.repositoryStoragePathForUri(
@@ -53,8 +53,8 @@ public class GitPreferencesFromRepoPrefs implements GitPreferences {
 
     @Override
     public Uri remoteUri() {
-        String url = ""; // TODO: dataRepository.selectRepo(repoPreferences.getRepoId()).getRepoUrl();
-
+        String url = "victor@do1.koloni.info:orgzly.git";
+        RepoPreferences prefs = repoPreferences; // Om man kunde få in uri i context...?
         return Uri.parse(url);
     }
 }

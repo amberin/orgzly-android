@@ -446,7 +446,7 @@ public class SyncService extends DaggerService {
             VersionedRook rook = namesake.getRooks().get(0);
             if (rook != null && namesake.getStatus() != BookSyncStatus.NO_CHANGE) {
                 Uri repoUri = rook.getRepoUri();
-                SyncRepo repo = dataRepository.getRepo(repoUri);
+                SyncRepo repo = dataRepository.getRepo(repoUri); // Här skulle man behöva skicka med repoId, så att det sedan kan lämnas vidare till repoFactory.getFromUri()
                 if (repo instanceof TwoWaySyncRepo) {
                     handleTwoWaySync(dataRepository, (TwoWaySyncRepo) repo, namesake);
                     return BookAction.forNow(
