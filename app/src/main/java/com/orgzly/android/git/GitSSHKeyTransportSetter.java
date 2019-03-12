@@ -18,8 +18,8 @@ public class GitSSHKeyTransportSetter implements GitTransportSetter {
     private SshSessionFactory sshSessionFactory;
     private TransportConfigCallback configCallback;
 
-    public GitSSHKeyTransportSetter(String pathToSSHKey) { // denna metod funkar utmärkt för activity (när argumenten hämtas från textfält)
-        sshKeyPath = pathToSSHKey; // Denna sätts framgångsrikt även vid sync!
+    public GitSSHKeyTransportSetter(String pathToSSHKey) {
+        sshKeyPath = pathToSSHKey;
         sshSessionFactory = new JschConfigSessionFactory() {
             @Override
             protected void configure(OpenSshConfig.Host host, Session session ) {
@@ -45,6 +45,6 @@ public class GitSSHKeyTransportSetter implements GitTransportSetter {
 
     public TransportCommand setTransport(TransportCommand tc) {
         tc.setTransportConfigCallback(configCallback);
-        return tc; // Här sätts iaf transportConfigCallback bra vid sync. Men uri sätts inte.
+        return tc;
     }
 }

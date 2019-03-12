@@ -32,7 +32,7 @@ public class GitPreferencesFromRepoPrefs implements GitPreferences {
     }
 
     @Override
-    public String repositoryFilepath() { // Tvivlar starkt på att denna funkar... repoPreferences verkar ju i det här läget inte innehålla något mer än värdet på repoId.
+    public String repositoryFilepath() {
         return repoPreferences.getStringValueWithGlobalDefault(
                 R.string.pref_key_git_repository_filepath,
                 AppPreferences.repositoryStoragePathForUri(

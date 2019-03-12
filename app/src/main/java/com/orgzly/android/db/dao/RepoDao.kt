@@ -14,9 +14,6 @@ abstract class RepoDao : BaseDao<Repo> {
     @Query("SELECT id FROM repos WHERE url = :url")
     abstract fun getIdFromUrl(url: String): Long?
 
-    @Query("SELECT url FROM repos WHERE id = :id")
-    abstract fun getUrlStringFromId(id: Long): String?
-
     @Query("SELECT * FROM repos WHERE id = :id")
     abstract fun get(id: Long): Repo?
 

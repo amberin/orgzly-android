@@ -45,7 +45,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
     }
 
     public static GitRepo buildFromUri(Context context, Uri uri)
-            throws IOException, URISyntaxException { // TODO: Find a way to lookup repo ID from repo URI.
+            throws IOException, URISyntaxException { // TODO: Find a sane way to lookup repo ID from repo URI.
         GitPreferencesFromRepoPrefs prefs = new GitPreferencesFromRepoPrefs(
                 RepoPreferences.fromUri(context, uri));
         return build(prefs, false);
@@ -246,7 +246,6 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
     }
 
     public void delete(Uri deleteUri) throws IOException {
-        // FIXME: finish me
         synchronizer.deleteFileAndCommit(deleteUri);
     }
 

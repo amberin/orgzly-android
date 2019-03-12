@@ -171,7 +171,7 @@ class DataRepository @Inject constructor(
     }
 
     @Throws(IOException::class)
-    fun getRepo(repoUrl: Uri?): SyncRepo { // FIXME: Get rid of the ? here without breaking deleteBook().
+    fun getRepo(repoUrl: Uri?): SyncRepo { // TODO: Get rid of the ? here without breaking deleteBook().
         val repoId = getRepoId(repoUrl.toString())
         return repoFactory.getFromUri(context, repoUrl, repoId)
                 ?: throw IOException("Unsupported repository URL \"$repoUrl\"")
@@ -1710,10 +1710,6 @@ class DataRepository @Inject constructor(
     private fun getRepoId(url: String): Long? {
         return db.repo().getIdFromUrl(url)
     }
-
-//    fun getRepoUrl(id: Long): String? {
-//        return db.repo().getUrlStringFromId(id)
-//    }
 
     fun createRepo(url: String): Long {
         if (getRepo(url) != null) {

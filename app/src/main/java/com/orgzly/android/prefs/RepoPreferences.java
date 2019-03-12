@@ -29,11 +29,11 @@ public class RepoPreferences {
     }
 
     private String getRepoPreferencesFilename() {
-        return String.format("repo.%d", repoId); // Anropas även vid sync.
+        return String.format("repo.%d", repoId);
     }
 
     public SharedPreferences getRepoPreferences() {
-        return context.getSharedPreferences(getRepoPreferencesFilename(), Context.MODE_PRIVATE); // Detta verkar funka som det ska.
+        return context.getSharedPreferences(getRepoPreferencesFilename(), Context.MODE_PRIVATE);
     }
 
     private SharedPreferences getAppPreferences() {
@@ -45,7 +45,7 @@ public class RepoPreferences {
     }
 
     public String getStringValue(int selector, String def) {
-        return getStringValue(getSelector(selector), def); // används framgångsrikt av activity
+        return getStringValue(getSelector(selector), def);
     }
 
     public String getStringValue(String key, String def) {
@@ -53,7 +53,7 @@ public class RepoPreferences {
     }
 
     public String getStringValueWithGlobalDefault(String key, String def) {
-        return getStringValue(key, getAppPreferences().getString(key, def)); // Jag tror faktiskt att alla dessa funkar. Annars skulle inget någonsin kunna läsas från XML-filen.
+        return getStringValue(key, getAppPreferences().getString(key, def));
     }
 
     public String getStringValueWithGlobalDefault(int selector, String def) {
