@@ -250,6 +250,17 @@ public class AppPreferences {
         getDefaultSharedPreferences(context).edit().putBoolean(key, value).apply();
     }
 
+    public static boolean remindersForEventsEnabled(Context context) {
+        return getDefaultSharedPreferences(context).getBoolean(
+                context.getResources().getString(R.string.pref_key_use_reminders_for_event_times),
+                context.getResources().getBoolean(R.bool.pref_default_use_reminders_for_event_times));
+    }
+
+    public static void remindersForEventsEnabled(Context context, boolean value) {
+        String key = context.getResources().getString(R.string.pref_key_use_reminders_for_event_times);
+        getDefaultSharedPreferences(context).edit().putBoolean(key, value).apply();
+    }
+
     public static boolean remindersSound(Context context) {
         return getDefaultSharedPreferences(context).getBoolean(
                 context.getResources().getString(R.string.pref_key_reminders_sound),
@@ -360,6 +371,21 @@ public class AppPreferences {
         return Integer.valueOf(getDefaultSharedPreferences(context).getString(
                 context.getResources().getString(R.string.pref_key_org_indent_indentation_per_level),
                 context.getResources().getString(R.string.pref_default_org_indent_indentation_per_level)));
+    }
+
+    /*
+     * Click action.
+     */
+
+    public static boolean isReverseNoteClickAction(Context context) {
+        return getDefaultSharedPreferences(context).getBoolean(
+                context.getResources().getString(R.string.pref_key_is_reverse_click_action),
+                context.getResources().getBoolean(R.bool.pref_default_is_reverse_click_action));
+    }
+
+    public static void isReverseNoteClickAction(Context context, boolean value) {
+        String key = context.getResources().getString(R.string.pref_key_is_reverse_click_action);
+        getDefaultSharedPreferences(context).edit().putBoolean(key, value).apply();
     }
 
     /*
@@ -770,6 +796,16 @@ public class AppPreferences {
 
     public static long reminderLastRunForDeadline(Context context) {
         String key = context.getResources().getString(R.string.pref_key_reminder_service_last_run_for_deadline);
+        return getStateSharedPreferences(context).getLong(key, 0L);
+    }
+
+    public static void reminderLastRunForEvents(Context context, long value) {
+        String key = context.getResources().getString(R.string.pref_key_reminder_service_last_run_for_event);
+        getStateSharedPreferences(context).edit().putLong(key, value).apply();
+    }
+
+    public static long reminderLastRunForEvents(Context context) {
+        String key = context.getResources().getString(R.string.pref_key_reminder_service_last_run_for_event);
         return getStateSharedPreferences(context).getLong(key, 0L);
     }
 

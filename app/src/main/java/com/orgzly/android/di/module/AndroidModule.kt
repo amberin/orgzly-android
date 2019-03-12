@@ -78,13 +78,13 @@ internal abstract class AndroidModule {
     internal abstract fun contributeReposActivity(): ReposActivity
 
     @ContributesAndroidInjector
-    internal abstract fun contributeBrowserActivity(): BrowserActivity
-
-    @ContributesAndroidInjector
     internal abstract fun contributeDropboxRepoActivity(): DropboxRepoActivity
 
     @ContributesAndroidInjector
     internal abstract fun contributeDirectoryRepoActivity(): DirectoryRepoActivity
+
+    @ContributesAndroidInjector
+    internal abstract fun contributeBrowserActivity(): BrowserActivity
 
     @ContributesAndroidInjector
     internal abstract fun contributeGitRepoActivity(): GitRepoActivity

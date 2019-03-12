@@ -21,6 +21,7 @@ import static androidx.test.espresso.Espresso.pressBack;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.longClick;
 import static androidx.test.espresso.action.ViewActions.scrollTo;
+import static androidx.test.espresso.action.ViewActions.swipeLeft;
 import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.contrib.DrawerActions.open;
@@ -755,5 +756,23 @@ public class QueryFragmentTest extends OrgzlyTest {
         onView(withId(R.id.bottom_action_bar_state)).perform(click());
 
         onView(withText("TODO")).check(matches(isChecked()));
+    }
+
+    @Ignore
+    @Test
+    public void testOpensBookFromSearchBySwiping() {
+        testUtils.setupBook("notebook", "* TODO Note A\n* TODO Note B");
+        activityRule.launchActivity(null);
+        searchForText("i.todo");
+        onNoteInSearch(1).perform(swipeLeft());
+        onView(withId(R.id.fragment_book_view_flipper)).check(matches(isDisplayed()));
+    }
+
+    @Test
+    public void testSearchAndClickOnNoteWithTwoDifferentEvents() {
+        testUtils.setupBook("notebook", "* Note\n<2000-01-01>\n<2000-01-02>");
+        activityRule.launchActivity(null);
+        searchForText("e.lt.now");
+        onNoteInSearch(0).perform(click());
     }
 }
