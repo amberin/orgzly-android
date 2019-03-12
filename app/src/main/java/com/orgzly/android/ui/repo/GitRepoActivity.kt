@@ -122,7 +122,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
     }
 
     private fun setFromPreferences() {
-        val prefs = RepoPreferences(this, repoId, this.remoteUri())
+        val prefs = RepoPreferences(this, repoId, remoteUri())
         for (field in fields) {
             setTextFromPrefKey(prefs, field.editText, field.preference)
         }
@@ -186,7 +186,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
         val editor: SharedPreferences.Editor = RepoPreferences(this, id, remoteUri()).repoPreferences.edit()
 
         for (field in fields) {
-            val settingName = getSettingName(field.preference) // field.preference = Int (0-5)
+            val settingName = getSettingName(field.preference)
             val value = field.editText.text.toString()
             if (value.isNotEmpty()) {
                 editor.putString(settingName, value)
@@ -245,7 +245,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
     }
 
     private fun getSettingName(setting: Int): String {
-        return resources.getString(setting) // Funkar för activity, men tveksamt om den anropas vid sync?
+        return resources.getString(setting)
     }
 
     private fun withDefault(v: String?, selector: Int): String {
@@ -269,7 +269,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
     override fun repositoryFilepath(): String {
         val v = activity_repo_git_directory.text.toString()
         return if (v.isNotEmpty()) {
-            v // något sånt här behövs vid sync!
+            v
         } else {
             AppPreferences.repositoryStoragePathForUri(this, remoteUri())
         }
@@ -310,12 +310,20 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
             ACTIVITY_REQUEST_CODE_FOR_DIRECTORY_SELECTION ->
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     val uri = data.data
-                    activity_repo_git_directory.setText(uri.toString())
+                    // Ugly hack to remove the irritating "file:" prefix
+                    var uriString = uri.toString()
+                    if (uriString.startsWith("file:"))
+                        uriString = uri.toString().replaceFirst("file:", "")
+                    activity_repo_git_directory.setText(uriString)
                 }
             ACTIVITY_REQUEST_CODE_FOR_SSH_KEY_SELECTION ->
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     val uri = data.data
-                    activity_repo_git_ssh_key.setText(uri.toString())
+                    // Ugly hack to remove the irritating "file:" prefix
+                    var uriString = uri.toString()
+                    if (uriString.startsWith("file:"))
+                        uriString = uri.toString().replaceFirst("file:", "")
+                    activity_repo_git_ssh_key.setText(uriString)
                 }
         }
     }
