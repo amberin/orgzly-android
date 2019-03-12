@@ -212,7 +212,6 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
             if (createdRepoId is Long) {
                 repoId = createdRepoId
             }
-            UseCaseRunner.run(useCase)
 
             App.EXECUTORS.mainThread().execute {
                 saveToPreferences(repoId)
