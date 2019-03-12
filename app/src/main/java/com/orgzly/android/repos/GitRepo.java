@@ -14,8 +14,6 @@ import com.orgzly.android.prefs.RepoPreferences;
 
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.GitCommand;
-import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -42,21 +40,21 @@ import java.util.List;
 public class GitRepo implements SyncRepo, TwoWaySyncRepo {
     public final static String SCHEME = "git";
 
-    public static GitTransportSetter getTransportSetter(GitPreferences preferences) { // Denna verkar funka både vid activity och sync.
+    public static GitTransportSetter getTransportSetter(GitPreferences preferences) {
         return new GitSSHKeyTransportSetter(Uri.parse(preferences.sshKeyPathString()).getPath());
     }
 
     public static GitRepo buildFromUri(Context context, Uri uri)
-            throws IOException, URISyntaxException {
+            throws IOException, URISyntaxException { // TODO: Find a way to lookup repo ID from repo URI.
         GitPreferencesFromRepoPrefs prefs = new GitPreferencesFromRepoPrefs(
-                RepoPreferences.fromUri(context, uri)); // Här verkar man inte få tillbaka så mycket till RepoPreferences...
+                RepoPreferences.fromUri(context, uri));
         return build(prefs, false);
     }
 
     public static GitRepo buildFromRepoId(Context context, Long rid)
             throws IOException {
         GitPreferencesFromRepoPrefs prefs = new GitPreferencesFromRepoPrefs(
-                RepoPreferences.fromRepoId(context, rid)); // Här verkar man inte få tillbaka så mycket till RepoPreferences...
+                RepoPreferences.fromRepoId(context, rid));
         return build(prefs, false);
     }
 
@@ -65,7 +63,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
 
         StoredConfig config = git.getRepository().getConfig();
         config.setString("remote", prefs.remoteName(), "url", prefs.remoteUri().toString());
-        config.save(); // config verkar sättas ganska bra vid sync
+        config.save();
 
         return new GitRepo(git, prefs);
     }
@@ -83,7 +81,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
     }
 
     public static Git ensureRepositoryExists(
-            Uri repoUri, File directoryFile, GitTransportSetter transportSetter, // Allt verkar sättas korrekt här vid sync, utom repoUri!
+            Uri repoUri, File directoryFile, GitTransportSetter transportSetter,
             boolean clone, ProgressMonitor pm)
             throws IOException {
         FileRepositoryBuilder frb = new FileRepositoryBuilder();
@@ -133,18 +131,10 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
         return false;
     }
 
-    public VersionedRook storeBook(File file, String fileName) throws IOException { // Ah, jag hade helt missförstått vad denna metod används till. Den anropas bara när man skapar en ny notebook.
-        // FIXME: Removed current_versioned_rooks table, just get the list from remote
-//        VersionedRook current = CurrentRooksClient.get(
-//                // TODO: get rid of "/" prefix needed here
-//                App.getAppContext(), getUri().toString(), "/" + fileName);
-        VersionedRook current = null;
-
-        RevCommit commit = getCommitFromRevisionString(current.getRevision());
-        synchronizer.updateAndCommitFileFromRevision(
-                file, fileName, synchronizer.getFileRevision(fileName, commit));
-        synchronizer.tryPushIfUpdated(commit);
-        return currentVersionedRook(Uri.EMPTY.buildUpon().appendPath(fileName).build());
+    public VersionedRook storeBook(File file, String fileName) throws IOException {
+        synchronizer.addAndCommitNewFile(file, fileName);
+        Uri uri = Uri.parse("/" + fileName);
+        return currentVersionedRook(uri);
     }
 
     private RevWalk walk() {
@@ -181,10 +171,18 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
         return currentVersionedRook(sourceUri);
     }
 
-    private VersionedRook currentVersionedRook(Uri uri) throws IOException {
-        RevCommit newCommit = synchronizer.currentHead(); // TODO: Don't use current HEAD as a starting point; start by finding out the current revision of "uri".
-        long mtime = (long)newCommit.getCommitTime()*1000;
-        return new VersionedRook(getUri(), uri, newCommit.name(), mtime);
+    private VersionedRook currentVersionedRook(Uri uri) {
+        RevCommit commit = null;
+        if (uri.toString().contains("%")) {
+            uri = Uri.parse(Uri.decode(uri.toString()));
+        }
+        try {
+            commit = synchronizer.getLatestCommitOfFile(uri);
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        }
+        long mtime = (long)commit.getCommitTime()*1000;
+        return new VersionedRook(getUri(), uri, commit.name(), mtime);
     }
 
     private IgnoreNode getIgnores() throws IOException {
@@ -249,7 +247,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
 
     public void delete(Uri deleteUri) throws IOException {
         // FIXME: finish me
-        throw new IOException("Don't do that");
+        synchronizer.deleteFileAndCommit(deleteUri);
     }
 
     public VersionedRook renameBook(Uri from, String name) throws IOException {

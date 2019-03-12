@@ -171,7 +171,7 @@ class DataRepository @Inject constructor(
     }
 
     @Throws(IOException::class)
-    fun getRepo(repoUrl: Uri): SyncRepo {
+    fun getRepo(repoUrl: Uri?): SyncRepo { // FIXME: Get rid of the ? here without breaking deleteBook().
         val repoId = getRepoId(repoUrl.toString())
         return repoFactory.getFromUri(context, repoUrl, repoId)
                 ?: throw IOException("Unsupported repository URL \"$repoUrl\"")
@@ -328,8 +328,8 @@ class DataRepository @Inject constructor(
 
     private fun deleteBook(book: BookView, deleteLinked: Boolean) {
         if (deleteLinked) {
-            val repo = repoFactory.getFromUri(context, book.syncedTo?.repoUri, null)
-            repo?.delete(book.syncedTo?.uri)
+            val repo = getRepo(book.syncedTo?.repoUri)
+            repo.delete(book.syncedTo?.uri)
         }
 
         db.book().delete(book.book)

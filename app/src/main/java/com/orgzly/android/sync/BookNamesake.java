@@ -183,13 +183,7 @@ public class BookNamesake {
                 return;
             }
 
-            /*
-            FIXME: After each Git commit, the books that were not part of the commit show as out of
-            sync, because their current revision number is new. This is unavoidable with Git, so the
-            latestLinkedRook check needs to be done in a different way for books in Git repos (e.g.
-            by asking Git about the latest revision for that file, not for the entire repo).
-            */
-            if (! Uri.decode(book.getSyncedTo().toString()).equals(latestLinkedRook.toString())) {
+            if (! book.getSyncedTo().getUri().equals(latestLinkedRook.getUri())) {
                 status = BookSyncStatus.CONFLICT_LAST_SYNCED_ROOK_AND_LATEST_ROOK_ARE_DIFFERENT;
                 return;
             }
