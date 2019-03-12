@@ -33,7 +33,6 @@ import org.eclipse.jgit.util.FileUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,17 +43,10 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
         return new GitSSHKeyTransportSetter(Uri.parse(preferences.sshKeyPathString()).getPath());
     }
 
-    public static GitRepo buildFromUri(Context context, Uri uri)
-            throws IOException, URISyntaxException { // TODO: Find a sane way to lookup repo ID from repo URI.
-        GitPreferencesFromRepoPrefs prefs = new GitPreferencesFromRepoPrefs(
-                RepoPreferences.fromUri(context, uri));
-        return build(prefs, false);
-    }
-
-    public static GitRepo buildFromRepoId(Context context, Long rid)
+    public static GitRepo buildFromIdAndUri(Context context, Long rid, Uri uri)
             throws IOException {
         GitPreferencesFromRepoPrefs prefs = new GitPreferencesFromRepoPrefs(
-                RepoPreferences.fromRepoId(context, rid));
+                new RepoPreferences(context, rid, uri));
         return build(prefs, false);
     }
 

@@ -40,7 +40,7 @@ public class RepoFactory {
 
                     case GitRepo.SCHEME:
                         if (BuildConfig.IS_GIT_ENABLED) {
-                            return GitRepo.buildFromRepoId(context, repoId);
+                            return GitRepo.buildFromIdAndUri(context, repoId, uri);
                         }
 
                     case DirectoryRepo.SCHEME:
@@ -50,7 +50,7 @@ public class RepoFactory {
                         return new MockRepo(dbRepoBookRepository, uriString);
 
                     default:
-                        return GitRepo.buildFromRepoId(context, repoId);
+                        return GitRepo.buildFromIdAndUri(context, repoId, uri);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

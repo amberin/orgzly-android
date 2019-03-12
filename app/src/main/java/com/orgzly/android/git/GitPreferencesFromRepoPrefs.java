@@ -53,8 +53,6 @@ public class GitPreferencesFromRepoPrefs implements GitPreferences {
 
     @Override
     public Uri remoteUri() {
-        String url = "victor@do1.koloni.info:orgzly.git";
-        RepoPreferences prefs = repoPreferences; // Om man kunde få in uri i context...?
-        return Uri.parse(url);
+        return repoPreferences.getRepoUri();
     }
 }

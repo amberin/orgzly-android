@@ -102,7 +102,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
         if (repoId != 0L) {
             viewModel.repo.observe(this, Observer {
                 activity_repo_git_url.setText(it.url)
-                setFromPreferences() // det är det här som verkar göra att activity lyckas hämta?
+                setFromPreferences()
            })
         }
 
@@ -122,9 +122,9 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
     }
 
     private fun setFromPreferences() {
-        val prefs = RepoPreferences(this, repoId) // funkar
+        val prefs = RepoPreferences(this, repoId, this.remoteUri())
         for (field in fields) {
-            setTextFromPrefKey(prefs, field.editText, field.preference) // funkar
+            setTextFromPrefKey(prefs, field.editText, field.preference)
         }
     }
 
@@ -183,7 +183,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
     }
 
     private fun saveToPreferences(id: Long): Boolean {
-        val editor: SharedPreferences.Editor = RepoPreferences(this, id).repoPreferences.edit()
+        val editor: SharedPreferences.Editor = RepoPreferences(this, id, remoteUri()).repoPreferences.edit()
 
         for (field in fields) {
             val settingName = getSettingName(field.preference) // field.preference = Int (0-5)
@@ -284,7 +284,7 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
         return withDefault(activity_repo_git_branch.text.toString(), R.string.pref_key_git_branch_name)
     }
 
-    override fun remoteUri(): Uri { // En override motsvarande denna behövs även för GitPreferencesFromRepoPrefs!
+    override fun remoteUri(): Uri {
         val remoteUriString = activity_repo_git_url.text.toString()
         return Uri.parse(remoteUriString)
     }
