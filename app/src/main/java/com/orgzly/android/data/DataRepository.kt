@@ -329,7 +329,7 @@ class DataRepository @Inject constructor(
     private fun deleteBook(book: BookView, deleteLinked: Boolean) {
         if (deleteLinked) {
             val repo = getRepo(book.syncedTo?.repoUri)
-            repo.delete(book.syncedTo?.uri)
+            repo?.delete(book.syncedTo?.uri)
         }
 
         db.book().delete(book.book)
