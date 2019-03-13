@@ -99,8 +99,8 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
 
         /* Set directory value for existing repository being edited. */
         if (repoId != 0L) {
-            viewModel.repo.observe(this, Observer {
-                activity_repo_git_url.setText(it.url)
+            viewModel.repo.observe(this, Observer { repo ->
+                activity_repo_git_url.setText(repo?.url)
                 setFromPreferences()
            })
         }
