@@ -36,6 +36,7 @@ import java.io.IOException
 import javax.inject.Inject
 
 class GitRepoActivity : CommonActivity(), GitPreferences {
+    private lateinit var fields: Array<Field>
 
     @Inject
     lateinit var repoFactory: RepoFactory
@@ -43,8 +44,6 @@ class GitRepoActivity : CommonActivity(), GitPreferences {
     private var repoId: Long = 0
 
     private lateinit var viewModel: RepoViewModel
-
-    private lateinit var fields: Array<Field>
 
     data class Field(var editText: EditText, var layout: TextInputLayout, var preference: Int)
 
