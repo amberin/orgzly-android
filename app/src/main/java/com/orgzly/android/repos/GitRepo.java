@@ -337,6 +337,11 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
                     synchronizer.getFileRevision(fileName, rookCommit),
                     rookCommit);
 
+            if (!git.getRepository().getBranch().equals(preferences.branchName())) {
+                // Attempt merging back to the preferred branch.
+                synchronizer.attemptReturnToPreferredBranch();
+            }
+
             synchronizer.tryPushIfUpdated(rookCommit);
 
             syncBackNeeded = !synchronizer.fileMatchesInRevisions(

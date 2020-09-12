@@ -158,6 +158,8 @@ public class GitFileSynchronizer {
                 if (!result.getMergeStatus().isSuccessful()) {
                     throw new IOException("Unexpected failure to merge branch");
                 }
+            } else {
+                throw new IOException("Unable to merge conflicting changes; staying on temporary branch.");
             }
         } catch (GitAPIException e) {
             doCleanup = true;
@@ -224,18 +226,43 @@ public class GitFileSynchronizer {
         ensureRepoIsClean();
         try {
             fetch();
-            // FIXME: maybe:
-            // checkoutSelected();
             RevCommit current = currentHead();
             RevCommit mergeTarget = getCommit(
                     String.format("%s/%s", preferences.remoteName(), preferences.branchName()));
-            if (!doMerge(mergeTarget))
-                throw new IOException(
-                        String.format("Failed to merge %s and %s",
-                                current.getName(), mergeTarget.getName()));
+            if (!doMerge(mergeTarget)) {
+                // Only throw exception if we are on our preferred branch.
+                // Otherwise failing to merge is normal.
+                if (git.getRepository().getBranch().equals(preferences.branchName())) {
+                    throw new IOException(String.format("Failed to merge %s and %s",
+                            current.getName(), mergeTarget.getName()));
+                }
+            }
         } catch (GitAPIException e) {
             e.printStackTrace();
             throw new IOException("Failed to update from remote");
+        }
+    }
+
+    public void attemptReturnToPreferredBranch() throws IOException {
+        ensureRepoIsClean();
+        String originalBranch = git.getRepository().getBranch();
+        RevCommit mergeTarget = getCommit(
+                String.format("%s/%s", preferences.remoteName(), preferences.branchName()));
+        try {
+            if (doMerge(mergeTarget)) {
+                RevCommit merged = currentHead();
+                checkoutSelected();
+                if (doMerge(merged)) {
+                    git.branchDelete().setBranchNames(originalBranch);
+                }
+            }
+        } catch (Exception e) {
+            try {
+                git.checkout().setName(originalBranch).call();
+            } catch (GitAPIException ge) {
+                ge.printStackTrace();
+                throw new IOException("Error during checkout after failed merge attempt.");
+            }
         }
     }
 
