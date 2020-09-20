@@ -16,9 +16,11 @@ import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.TransportCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.BranchConfig;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
@@ -188,6 +190,32 @@ public class GitFileSynchronizer {
 
     public void tryPushIfUpdated(@NonNull RevCommit commit) throws IOException {
         if (!commit.equals(currentHead())) {
+            tryPush();
+        }
+    }
+
+    /**
+     * Try to push to remote if current HEAD and remote tracking branch point to different commits.
+     * This method was added to allow pushing only once per sync occasion: right after the
+     * "for namesake in namesakes"-loop in SyncService.doInBackground().
+     */
+    public void tryPushIfHeadDiffersFromRemote() {
+        Repository repo = git.getRepository();
+
+        RevCommit currentHead = null;
+        RevCommit remoteHead = null;
+
+        try {
+            String trackedRemoteBranch = new BranchConfig(
+                    repo.getConfig(), repo.getBranch())
+                        .getTrackingBranch();
+            currentHead = currentHead();
+            remoteHead = getCommit(trackedRemoteBranch);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (!currentHead.equals(remoteHead)) {
             tryPush();
         }
     }

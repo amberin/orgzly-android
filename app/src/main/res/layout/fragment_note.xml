@@ -100,6 +100,7 @@
                         android:layout_marginTop="@dimen/space_between_content_areas"
                         android:layout_marginBottom="@dimen/space_between_content_areas"
                         style="@style/Widget.AppCompat.EditText"
+                        android:hint="@string/fragment_note_title_hint"
                         tools:text="@string/head_title_sample"
                         android:freezesText="true"
                         android:textIsSelectable="true"
@@ -119,6 +120,14 @@
                 <LinearLayout
                     android:id="@+id/fragment_note_metadata_header"
                     style="@style/NoteFragmentFullWidthButton">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/screen_edge"
+                        android:layout_marginLeft="@dimen/screen_edge"
+                        android:src="?attr/ic_info_outline_24dp"
+                        android:alpha="?attr/active_unfocused_icon_alpha"/>
 
                     <TextView
                         android:layout_width="0dp"
@@ -366,7 +375,7 @@
                         android:layout_marginRight="@dimen/screen_edge_minus_4dp"
                         android:layout_marginEnd="@dimen/screen_edge_minus_4dp"
                         android:inputType="text|textCapSentences|textMultiLine"
-                        android:hint="@string/fragment_note_content_hint"
+                        android:hint="@string/content"
                         android:gravity="start|top"
                         android:freezesText="true"
                         android:textSize="?attr/fragment_note_content_text_size"
@@ -385,7 +394,7 @@
                         style="@style/Widget.AppCompat.EditText"
                         android:textIsSelectable="true"
                         android:textSize="?attr/fragment_note_content_text_size"
-                        android:hint="@string/fragment_note_content_hint"
+                        android:hint="@string/content"
                         android:visibility="gone" />
                 </LinearLayout>
 

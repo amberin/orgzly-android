@@ -342,8 +342,6 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
                 synchronizer.attemptReturnToPreferredBranch();
             }
 
-            synchronizer.tryPushIfUpdated(rookCommit);
-
             syncBackNeeded = !synchronizer.fileMatchesInRevisions(
                     fileName, rookCommit, synchronizer.currentHead());
         } else {
@@ -358,5 +356,9 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
         return new TwoWaySyncResult(
                 currentVersionedRook(Uri.EMPTY.buildUpon().appendPath(fileName).build()),
                 writeBack);
+    }
+
+    public void tryPushIfHeadDiffersFromRemote() {
+        synchronizer.tryPushIfHeadDiffersFromRemote();
     }
 }

@@ -9,6 +9,7 @@ import com.orgzly.R;
 import com.orgzly.android.OrgzlyTest;
 import com.orgzly.android.prefs.AppPreferences;
 import com.orgzly.android.ui.main.MainActivity;
+import com.orgzly.org.datetime.OrgDateTime;
 
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -718,7 +719,7 @@ public class QueryFragmentTest extends OrgzlyTest {
         activityRule.launchActivity(null);
 
         onView(allOf(withText("notebook"), isDisplayed())).perform(click());
-        onNoteInBook(1, R.id.item_head_fold_button_text).perform(click());
+        onNoteInBook(1, R.id.item_head_fold_button).perform(click());
         searchForText("note");
         onView(withId(R.id.fragment_query_search_view_flipper)).check(matches(isDisplayed()));
         onNotesInSearch().check(matches(recyclerViewItemCount(3)));
@@ -774,5 +775,48 @@ public class QueryFragmentTest extends OrgzlyTest {
         activityRule.launchActivity(null);
         searchForText("e.lt.now");
         onNoteInSearch(0).perform(click());
+    }
+
+    @Test
+    public void testInactiveScheduled() {
+        testUtils.setupBook("notebook-1", "* Note A\nSCHEDULED: [2020-07-01]");
+        activityRule.launchActivity(null);
+        searchForText("s.le.today");
+        onNotesInSearch().check(matches(recyclerViewItemCount(0)));
+    }
+
+    @Test
+    public void testInactiveDeadline() {
+        testUtils.setupBook("notebook-1", "* Note A\nDEADLINE: [2020-07-01]");
+        activityRule.launchActivity(null);
+        searchForText("d.le.today");
+        onNotesInSearch().check(matches(recyclerViewItemCount(0)));
+    }
+
+    @Test
+    public void testScheduledTimestamp() {
+        String inOneHour = new OrgDateTime.Builder()
+                .setDateTime(System.currentTimeMillis() + 1000 * 60 * 60)
+                .setHasTime(true)
+                .setIsActive(true)
+                .build()
+                .toString();
+
+        testUtils.setupBook("notebook-1", "* Note A\nSCHEDULED: " + inOneHour);
+
+        activityRule.launchActivity(null);
+
+        onBook(0).perform(click());
+
+        // Remove time usage
+        onView(allOf(withText(endsWith("Note A")), isDisplayed())).perform(longClick());
+        onView(withId(R.id.bottom_action_bar_schedule)).perform(click());
+        onView(withId(R.id.time_used_checkbox)).perform(click());
+        onView(withText(R.string.set)).perform(click());
+        pressBack();
+
+        searchForText("s.now");
+
+        onNotesInSearch().check(matches(recyclerViewItemCount(1)));
     }
 }

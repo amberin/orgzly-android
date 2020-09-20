@@ -2,9 +2,9 @@
 name: Feature request
 about: Suggest an idea for this project
 title: ''
-labels: 'New, Type: feature'
+labels: 'Type: feature'
 assignees: ''
 
 ---
 
-- [ ] I have searched for existing issues that may be the same as or related to mine.
+- I have searched for existing issues that may be the same as or related to mine.
