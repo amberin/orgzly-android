@@ -11,6 +11,7 @@ import com.orgzly.android.repos.GitRepo;
 import com.orgzly.android.util.MiscUtils;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.MergeResult;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
@@ -30,6 +31,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 import java.util.TimeZone;
 
 import kotlin.io.FileAlreadyExistsException;
@@ -195,27 +197,37 @@ public class GitFileSynchronizer {
     }
 
     /**
-     * Try to push to remote if current HEAD and remote tracking branch point to different commits.
-     * This method was added to allow pushing only once per sync occasion: right after the
+     * Try to push to remote if local and remote HEADs for the current branch point to different
+     * commits. This method was added to allow pushing only once per sync occasion: right after the
      * "for namesake in namesakes"-loop in SyncService.doInBackground().
      */
     public void tryPushIfHeadDiffersFromRemote() {
-        Repository repo = git.getRepository();
-
+        String branchName = null;
         RevCommit currentHead = null;
         RevCommit remoteHead = null;
+        Repository repo = git.getRepository();
 
         try {
-            String trackedRemoteBranch = new BranchConfig(
-                    repo.getConfig(), repo.getBranch())
-                        .getTrackingBranch();
+            branchName = repo.getBranch();
             currentHead = currentHead();
-            remoteHead = getCommit(trackedRemoteBranch);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        if (!currentHead.equals(remoteHead)) {
+        // Check if current branch exists on remote, before trying to compare heads
+        try {
+            List<Ref> call = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
+            for (Ref ref : call) {
+                if (ref.getName().equals("refs/remotes/origin/" + branchName)) {
+                    remoteHead = getCommit("origin/" + branchName);
+                    break;
+                }
+            }
+        } catch (GitAPIException | IOException e) {
+            e.printStackTrace();
+        }
+
+        if (currentHead == null || !currentHead.equals(remoteHead)) {
             tryPush();
         }
     }
@@ -276,21 +288,27 @@ public class GitFileSynchronizer {
         String originalBranch = git.getRepository().getBranch();
         RevCommit mergeTarget = getCommit(
                 String.format("%s/%s", preferences.remoteName(), preferences.branchName()));
+        boolean stillOnTempBranch = true;
         try {
             if (doMerge(mergeTarget)) {
                 RevCommit merged = currentHead();
                 checkoutSelected();
                 if (doMerge(merged)) {
+                    stillOnTempBranch = false;
                     git.branchDelete().setBranchNames(originalBranch);
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (stillOnTempBranch) {
             try {
                 git.checkout().setName(originalBranch).call();
             } catch (GitAPIException ge) {
                 ge.printStackTrace();
                 throw new IOException("Error during checkout after failed merge attempt.");
             }
+            throw new IOException("Saved to temporary branch; please resolve conflicts.");
         }
     }
 
