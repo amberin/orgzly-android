@@ -7,7 +7,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.orgzly.android.App;
-import com.orgzly.android.repos.GitRepo;
 import com.orgzly.android.util.MiscUtils;
 
 import org.eclipse.jgit.api.Git;
@@ -17,7 +16,6 @@ import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.TransportCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.BranchConfig;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
@@ -33,8 +31,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
-
-import kotlin.io.FileAlreadyExistsException;
 
 public class GitFileSynchronizer {
     private static String TAG = GitFileSynchronizer.class.getSimpleName();
@@ -162,8 +158,6 @@ public class GitFileSynchronizer {
                 if (!result.getMergeStatus().isSuccessful()) {
                     throw new IOException("Unexpected failure to merge branch");
                 }
-            } else {
-                throw new IOException("Unable to merge conflicting changes; staying on temporary branch.");
             }
         } catch (GitAPIException e) {
             doCleanup = true;
@@ -283,33 +277,33 @@ public class GitFileSynchronizer {
         }
     }
 
-    public void attemptReturnToPreferredBranch() throws IOException {
+    public boolean attemptReturnToMainBranch() throws IOException {
         ensureRepoIsClean();
         String originalBranch = git.getRepository().getBranch();
         RevCommit mergeTarget = getCommit(
                 String.format("%s/%s", preferences.remoteName(), preferences.branchName()));
-        boolean stillOnTempBranch = true;
+        boolean backOnMainBranch = false;
         try {
             if (doMerge(mergeTarget)) {
                 RevCommit merged = currentHead();
                 checkoutSelected();
                 if (doMerge(merged)) {
-                    stillOnTempBranch = false;
+                    backOnMainBranch = true;
                     git.branchDelete().setBranchNames(originalBranch);
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (stillOnTempBranch) {
+        if (!backOnMainBranch) {
             try {
                 git.checkout().setName(originalBranch).call();
             } catch (GitAPIException ge) {
                 ge.printStackTrace();
                 throw new IOException("Error during checkout after failed merge attempt.");
             }
-            throw new IOException("Saved to temporary branch; please resolve conflicts.");
         }
+        return backOnMainBranch;
     }
 
     public void updateAndCommitExistingFile(File sourceFile, String repositoryPath) throws IOException {

@@ -9,7 +9,6 @@ import com.orgzly.android.db.entity.Repo;
 import com.orgzly.android.git.GitFileSynchronizer;
 import com.orgzly.android.git.GitPreferences;
 import com.orgzly.android.git.GitPreferencesFromRepoPrefs;
-import com.orgzly.android.git.GitSSHKeyTransportSetter;
 import com.orgzly.android.git.GitTransportSetter;
 import com.orgzly.android.prefs.RepoPreferences;
 
@@ -325,21 +324,21 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
     public TwoWaySyncResult syncBook(
             Uri uri, VersionedRook current, File fromDB) throws IOException {
         File writeBack = null;
+        boolean onMainBranch = git.getRepository().getBranch().equals(preferences.branchName());
         String fileName = uri.getPath();
         if (fileName.startsWith("/"))
             fileName = fileName.replaceFirst("/", "");
-        boolean syncBackNeeded = false;
+        boolean syncBackNeeded;
         if (current != null) {
             RevCommit rookCommit = getCommitFromRevisionString(current.getRevision());
             Log.i("Git", String.format("File name %s, rookCommit: %s", fileName, rookCommit));
-            synchronizer.updateAndCommitFileFromRevisionAndMerge(
+            boolean merged = synchronizer.updateAndCommitFileFromRevisionAndMerge(
                     fromDB, fileName,
                     synchronizer.getFileRevision(fileName, rookCommit),
                     rookCommit);
 
-            if (!git.getRepository().getBranch().equals(preferences.branchName())) {
-                // Attempt merging back to the preferred branch.
-                synchronizer.attemptReturnToPreferredBranch();
+            if (merged && !onMainBranch) {
+                onMainBranch = synchronizer.attemptReturnToMainBranch();
             }
 
             syncBackNeeded = !synchronizer.fileMatchesInRevisions(
@@ -354,7 +353,7 @@ public class GitRepo implements SyncRepo, TwoWaySyncRepo {
             writeBack = synchronizer.repoDirectoryFile(fileName);
         }
         return new TwoWaySyncResult(
-                currentVersionedRook(Uri.EMPTY.buildUpon().appendPath(fileName).build()),
+                currentVersionedRook(Uri.EMPTY.buildUpon().appendPath(fileName).build()), onMainBranch,
                 writeBack);
     }
 
